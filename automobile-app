@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # Streamlit app config
 st.set_page_config(page_title="UCI Auto Regression", layout="centered")
 
-st.title("🚗 UCI Auto MPG Regression App")
+st.title("UCI Auto MPG Regression App")
 st.markdown("""
 Analyze automobile data from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/machine-learning-databases/autos/imports-85.data) using **multiple linear regression**.
 """)
@@ -38,7 +38,7 @@ st.subheader("🔍 Dataset Preview")
 st.dataframe(df.head())
 
 # Variable selection
-st.subheader("📌 Select Variables for Regression")
+st.subheader(" Select Variables for Regression")
 all_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 y_var = st.selectbox("Dependent Variable (y)", all_cols)
 x_vars = st.multiselect("Independent Variables (X)", [col for col in all_cols if col != y_var])
