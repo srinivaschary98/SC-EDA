@@ -1,40 +1,62 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import statsmodels.api as sm
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Regression App", layout="centered")
+# Streamlit app config
+st.set_page_config(page_title="UCI Auto Regression", layout="centered")
 
-st.title("📊 Multiple Regression Streamlit App")
+st.title("🚗 UCI Auto MPG Regression App")
+st.markdown("""
+Analyze automobile data from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/machine-learning-databases/autos/imports-85.data) using **multiple linear regression**.
+""")
 
-# Upload data
-uploaded_file = st.file_uploader("Upload your CSV file", type=['csv'])
+# Load dataset from UCI
+@st.cache_data
+def load_data():
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/autos/imports-85.data"
+    columns = [
+        "symboling", "normalized-losses", "make", "fuel-type", "aspiration", "num-of-doors",
+        "body-style", "drive-wheels", "engine-location", "wheel-base", "length", "width",
+        "height", "curb-weight", "engine-type", "num-of-cylinders", "engine-size",
+        "fuel-system", "bore", "stroke", "compression-ratio", "horsepower", "peak-rpm",
+        "city-mpg", "highway-mpg", "price"
+    ]
+    df = pd.read_csv(url, names=columns, na_values='?')
+    return df
 
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    st.write("### Dataset Preview")
-    st.dataframe(df)
+df = load_data()
 
-    # Select variables
-    all_cols = df.columns.tolist()
-    y_var = st.selectbox("Select dependent variable (y):", all_cols)
-    x_vars = st.multiselect("Select independent variables (X):", [col for col in all_cols if col != y_var])
+# Clean data
+numeric_cols = ['price', 'horsepower', 'engine-size', 'curb-weight', 'wheel-base', 'length', 'width', 'height', 'compression-ratio', 'peak-rpm', 'city-mpg', 'highway-mpg', 'bore', 'stroke']
+df.dropna(subset=numeric_cols, inplace=True)
+df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric)
 
-    if x_vars:
-        X = df[x_vars]
-        X = sm.add_constant(X)
-        y = df[y_var]
+st.subheader("🔍 Dataset Preview")
+st.dataframe(df.head())
 
-        # Fit model
-        model = sm.OLS(y, X).fit()
+# Variable selection
+st.subheader("📌 Select Variables for Regression")
+all_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+y_var = st.selectbox("Dependent Variable (y)", all_cols)
+x_vars = st.multiselect("Independent Variables (X)", [col for col in all_cols if col != y_var])
 
-        # Show summary
-        st.write("### Regression Summary")
-        st.text(model.summary())
+# Regression
+if x_vars:
+    X = df[x_vars]
+    X = sm.add_constant(X)
+    y = df[y_var]
 
-        # Optional: Correlation heatmap
-        st.write("### Correlation Heatmap")
-        fig, ax = plt.subplots()
-        sns.heatmap(df.corr(), annot=True, cmap='coolwarm', ax=ax)
-        st.pyplot(fig)
+    model = sm.OLS(y, X).fit()
+
+    st.subheader("📈 Regression Summary")
+    st.text(model.summary())
+
+    st.subheader("📊 Correlation Heatmap")
+    fig, ax = plt.subplots()
+    sns.heatmap(df[x_vars + [y_var]].corr(), annot=True, cmap='coolwarm', ax=ax)
+    st.pyplot(fig)
+else:
+    st.info("Please select at least one independent variable to run the regression.")
