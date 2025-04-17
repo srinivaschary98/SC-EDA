@@ -1,0 +1,40 @@
+import streamlit as st
+import pandas as pd
+import statsmodels.api as sm
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+st.set_page_config(page_title="Regression App", layout="centered")
+
+st.title("📊 Multiple Regression Streamlit App")
+
+# Upload data
+uploaded_file = st.file_uploader("Upload your CSV file", type=['csv'])
+
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+    st.write("### Dataset Preview")
+    st.dataframe(df)
+
+    # Select variables
+    all_cols = df.columns.tolist()
+    y_var = st.selectbox("Select dependent variable (y):", all_cols)
+    x_vars = st.multiselect("Select independent variables (X):", [col for col in all_cols if col != y_var])
+
+    if x_vars:
+        X = df[x_vars]
+        X = sm.add_constant(X)
+        y = df[y_var]
+
+        # Fit model
+        model = sm.OLS(y, X).fit()
+
+        # Show summary
+        st.write("### Regression Summary")
+        st.text(model.summary())
+
+        # Optional: Correlation heatmap
+        st.write("### Correlation Heatmap")
+        fig, ax = plt.subplots()
+        sns.heatmap(df.corr(), annot=True, cmap='coolwarm', ax=ax)
+        st.pyplot(fig)
